@@ -4,7 +4,7 @@
            (java.util Random))
   (:gen-class))
 
-(def fmt-string (str "<instance objName=\"%s\" x=\"%d\" y=\"%d\" name=\"%s\" locked=\"0\""
+(def fmt-string (str "<instance objName=\"%s\" x=\"%d\" y=\"%d\" name=\"%s\" locked=\"0\" "
                      "code=\"\" scaleX=\"1\" scaleY=\"1\" colour=\"4294967295\" rotation=\"%f\"/>"))
 
 (def tab (read-string (slurp (io/resource "objtab.edn"))))
@@ -43,18 +43,19 @@
                      :rot 0.0}))))
 
 
-(defn handle-level [obj wll]
+(defn handle-level [obj wll out]
   (when (and
           (.exists obj)
           (.exists wll))
     (let [insts (concat (parse-obj obj) (parse-wll wll))]
-      (println (clojure.string/join "\n" (map #(format
+      (spit out (clojure.string/join "\n" (map #(format
                        fmt-string
                        (:obj-name %)
                        (:x %)
                        (:y %)
                        (:name %)
                        (:rot %)) insts)))
+      (println "Processed " (.getAbsolutePath out))
       true)))
 
 
@@ -63,10 +64,11 @@
         res #(.toFile (.resolve root (format "level%d.%s" %2 %1)))
         objs (map (partial res "obj") (range))
         wlls (map (partial res "wll") (range))
-        pairs (map vector objs wlls)]
+        outs (map (partial res "xml") (range))
+        pairs (map vector objs wlls outs)]
 
     (every?
-      (fn [[obj wll]] (handle-level obj wll))
+      (fn [[obj wll out]] (handle-level obj wll out))
       pairs)))
 
 
